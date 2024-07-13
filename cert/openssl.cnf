@@ -239,8 +239,8 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 
 [ alt_names ]
 
-DNS.1 = *.mszlu.com
-# DNS.2 = *.xxx.com
+DNS.1 = *.x9nu.cn
+# DNS.2 = *.xxx.cn
 
 [ v3_ca ]
 
