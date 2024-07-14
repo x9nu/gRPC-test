@@ -4,6 +4,8 @@
 // - protoc             v3.20.3
 // source: product.proto
 
+// package是proto的包名,一个文件就是一个package,用于import时解析
+
 package service
 
 import (

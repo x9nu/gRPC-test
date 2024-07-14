@@ -1,3 +1,5 @@
+// main 文件只是测试一下序列化和反序列化
+// 真正使用的是 `grpc-server.go` 和 `grpc-client.go“
 package main
 
 import (

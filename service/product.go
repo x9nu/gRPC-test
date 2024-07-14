@@ -11,7 +11,8 @@ type productService struct {
 func (p *productService) GetProductStock(ctx context.Context, prodReq *ProductRequest) (*ProductResponse, error) {
 	// 实现具体业务逻辑
 	stock := p.GetStockByID(prodReq.ProdId)
-	return &ProductResponse{ProdStock: stock}, nil
+	user := User{Username: "test_proto_import"}
+	return &ProductResponse{ProdStock: stock, User: &user}, nil
 }
 
 func (p *productService) GetStockByID(id int32) int32 {

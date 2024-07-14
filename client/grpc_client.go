@@ -54,5 +54,5 @@ func main() {
 	if err != nil {
 		log.Fatal("get stock err", err)
 	}
-	fmt.Println("调用gRPC方法成功，ProdStock = ", resp.ProdStock)
+	fmt.Println("调用gRPC方法成功，ProdStock = ", resp.ProdStock, resp.User)
 }

@@ -1,6 +1,7 @@
 syntax = "proto3";
-option go_package = "../service";
 package service;
+
+option go_package = "../service";// `go_package` 选项的路径是由 `.proto` 文件目录算起 
 
 message User {
   string username = 1;
