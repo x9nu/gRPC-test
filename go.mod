@@ -3,7 +3,6 @@ module grpc-test
 go 1.20
 
 require (
-	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )

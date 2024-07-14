@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"grpc-test/client/auth"
 	"grpc-test/client/service"
 	"log"
 	"os"
@@ -34,8 +35,14 @@ func main() {
 		ServerName: "*.x9nu.cn",
 		RootCAs:    certPool,
 	})
+	// 此处可以替代成jwt或oath的方式
+	token := &auth.Authentication{
+		//带&传递它的指针节约资源。如果不带，赋值或作为参数传递时，都会在内存中创建结构体的一个新副本，导致额外的内存消耗
+		User:     "admin",
+		Password: "admin",
+	}
 
-	conn, err := grpc.NewClient(":8002", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(":8002", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(token))
 	if err != nil {
 		log.Fatal("conn err")
 	}
