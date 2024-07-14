@@ -3,6 +3,11 @@ syntax = "proto3";
 package service; //本proto文件的package名，一个文件就是一个package
 import "user.proto";// `import` 选项 从执行 `protoc` 命令的目录算起
 import "google/protobuf/any.proto";// 这相当于库文件，不是自己的东西
+/*****************************
+    疑问？为什么"google/protobuf/any.proto"这个目录在附近目录又找不到又没有，
+    因为这是我们安装protoc工具时，已经内置了它自己当然找得到
+    比我我的protoc安装目录，这些内置的proto文件在 `xxx\protoc-27.2-win64\include\google\protobuf`，里面有好多内置proto文件
+*****************************/
 
 // !`go_package` 引号内格式："`生成.go文件的位置`;`.go文件的package名`"
 option go_package = "../service;service";// `go_package` 选项的路径是由 `.proto` 文件目录算起 
