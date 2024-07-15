@@ -2,6 +2,8 @@ package service
 
 import (
 	context "context"
+	"fmt"
+	"io"
 
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -24,4 +26,27 @@ func (p *productService) GetProductStock(ctx context.Context, prodReq *ProductRe
 
 func (p *productService) GetStockByID(id int32) int32 {
 	return 100
+}
+
+func (p *productService) UpdateProductStockClientStream(stream ProductService_UpdateProductStockClientStreamServer) error {
+	count := 0
+	// 源源不断地接受客户端发送过来的消息，直到收10个请求就相应一次
+	for {
+		recv, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF { //正常处理完成
+				return nil
+			}
+			return err
+		} else {
+			count++
+		}
+		if count > 9 {
+			err := stream.SendAndClose(&ProductResponse{ProdStock: recv.ProdId})
+			if err != nil {
+				return err
+			}
+		}
+		fmt.Println("服务端接收到的流：", recv.ProdId)
+	}
 }

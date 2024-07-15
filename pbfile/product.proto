@@ -28,6 +28,8 @@ message ProductResponse {
 
 // 定义服务主体
 service ProductService {
-    // 定义方法
+    // 普通 RPC
     rpc GetProductStock(ProductRequest) returns(ProductResponse);
+    // 客户端流 RPC
+    rpc UpdateProductStockClientStream(stream ProductRequest) returns(ProductResponse);
 }

@@ -49,10 +49,45 @@ func main() {
 	defer conn.Close()
 
 	prodCli := service.NewProductServiceClient(conn)
-	request := &service.ProductRequest{ProdId: 233}
-	resp, err := prodCli.GetProductStock(context.Background(), request)
+	// request := &service.ProductRequest{ProdId: 233}
+	// resp, err := prodCli.GetProductStock(context.Background(), request)
+	// if err != nil {
+	// 	log.Fatal("get stock err", err)
+	// }
+	// fmt.Println("调用gRPC方法成功，ProdStock = ", resp.ProdStock, resp.User, resp.Data)
+
+	stream, err := prodCli.UpdateProductStockClientStream(context.Background())
 	if err != nil {
-		log.Fatal("get stock err", err)
+		log.Fatal("获取流出错", err)
 	}
-	fmt.Println("调用gRPC方法成功，ProdStock = ", resp.ProdStock, resp.User, resp.Data)
+	rsp := make(chan struct{}, 1)
+	go prodRequest(stream, rsp)
+	select {
+	case <-rsp:
+		recv, err := stream.CloseAndRecv()
+		if err != nil {
+			log.Fatal(err)
+		}
+		stock := recv.ProdStock
+		fmt.Println("库存:", stock)
+	}
+}
+
+func prodRequest(stream service.ProductService_UpdateProductStockClientStreamClient, rsp chan struct{}) {
+	// 模拟 10 个请求
+	count := 0
+	for {
+		request := &service.ProductRequest{ProdId: 233}
+		err := stream.Send(request)
+		if err != nil {
+			log.Fatal("发送流出错", err)
+		} else {
+			count++
+		}
+		fmt.Println("发送请求", count)
+		if count > 9 {
+			rsp <- struct{}{}
+			break
+		}
+	}
 }

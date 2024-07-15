@@ -21,7 +21,8 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	ProductService_GetProductStock_FullMethodName = "/service.ProductService/GetProductStock"
+	ProductService_GetProductStock_FullMethodName                = "/service.ProductService/GetProductStock"
+	ProductService_UpdateProductStockClientStream_FullMethodName = "/service.ProductService/UpdateProductStockClientStream"
 )
 
 // ProductServiceClient is the client API for ProductService service.
@@ -30,8 +31,10 @@ const (
 //
 // 定义服务主体
 type ProductServiceClient interface {
-	// 定义方法
+	// 普通 RPC
 	GetProductStock(ctx context.Context, in *ProductRequest, opts ...grpc.CallOption) (*ProductResponse, error)
+	// 客户端流 RPC
+	UpdateProductStockClientStream(ctx context.Context, opts ...grpc.CallOption) (ProductService_UpdateProductStockClientStreamClient, error)
 }
 
 type productServiceClient struct {
@@ -52,14 +55,51 @@ func (c *productServiceClient) GetProductStock(ctx context.Context, in *ProductR
 	return out, nil
 }
 
+func (c *productServiceClient) UpdateProductStockClientStream(ctx context.Context, opts ...grpc.CallOption) (ProductService_UpdateProductStockClientStreamClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ProductService_ServiceDesc.Streams[0], ProductService_UpdateProductStockClientStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &productServiceUpdateProductStockClientStreamClient{ClientStream: stream}
+	return x, nil
+}
+
+type ProductService_UpdateProductStockClientStreamClient interface {
+	Send(*ProductRequest) error
+	CloseAndRecv() (*ProductResponse, error)
+	grpc.ClientStream
+}
+
+type productServiceUpdateProductStockClientStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *productServiceUpdateProductStockClientStreamClient) Send(m *ProductRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *productServiceUpdateProductStockClientStreamClient) CloseAndRecv() (*ProductResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(ProductResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ProductServiceServer is the server API for ProductService service.
 // All implementations must embed UnimplementedProductServiceServer
 // for forward compatibility
 //
 // 定义服务主体
 type ProductServiceServer interface {
-	// 定义方法
+	// 普通 RPC
 	GetProductStock(context.Context, *ProductRequest) (*ProductResponse, error)
+	// 客户端流 RPC
+	UpdateProductStockClientStream(ProductService_UpdateProductStockClientStreamServer) error
 	mustEmbedUnimplementedProductServiceServer()
 }
 
@@ -69,6 +109,9 @@ type UnimplementedProductServiceServer struct {
 
 func (UnimplementedProductServiceServer) GetProductStock(context.Context, *ProductRequest) (*ProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProductStock not implemented")
+}
+func (UnimplementedProductServiceServer) UpdateProductStockClientStream(ProductService_UpdateProductStockClientStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method UpdateProductStockClientStream not implemented")
 }
 func (UnimplementedProductServiceServer) mustEmbedUnimplementedProductServiceServer() {}
 
@@ -101,6 +144,32 @@ func _ProductService_GetProductStock_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProductService_UpdateProductStockClientStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ProductServiceServer).UpdateProductStockClientStream(&productServiceUpdateProductStockClientStreamServer{ServerStream: stream})
+}
+
+type ProductService_UpdateProductStockClientStreamServer interface {
+	SendAndClose(*ProductResponse) error
+	Recv() (*ProductRequest, error)
+	grpc.ServerStream
+}
+
+type productServiceUpdateProductStockClientStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *productServiceUpdateProductStockClientStreamServer) SendAndClose(m *ProductResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *productServiceUpdateProductStockClientStreamServer) Recv() (*ProductRequest, error) {
+	m := new(ProductRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ProductService_ServiceDesc is the grpc.ServiceDesc for ProductService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -113,6 +182,12 @@ var ProductService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProductService_GetProductStock_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UpdateProductStockClientStream",
+			Handler:       _ProductService_UpdateProductStockClientStream_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "product.proto",
 }
