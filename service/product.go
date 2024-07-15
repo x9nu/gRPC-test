@@ -4,6 +4,7 @@ import (
 	context "context"
 	"fmt"
 	"io"
+	"log"
 
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -34,7 +35,7 @@ func (p *productService) UpdateProductStockClientStream(stream ProductService_Up
 	for {
 		recv, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF { //正常处理完成
+			if err == io.EOF { // stream.Recv()中接收到 io.EOF，表示客户端不再发送消息并且已经关闭了流
 				return nil
 			}
 			return err
@@ -48,5 +49,43 @@ func (p *productService) UpdateProductStockClientStream(stream ProductService_Up
 			}
 		}
 		fmt.Println("服务端接收到的流：", recv.ProdId)
+	}
+}
+
+func (p *productService) GetProductStockServerStream(req *ProductRequest, stream ProductService_GetProductStockServerStreamServer) error {
+	count := 0
+	for {
+		rsp := &ProductResponse{ProdStock: req.ProdId}
+		err := stream.Send(rsp)
+		if err != nil {
+			return err
+		} else {
+			count++
+		}
+		if count > 10 {
+			return nil
+		}
+	}
+}
+
+func (p *productService) HelloBidirectionalStream(stream ProductService_HelloBidirectionalStreamServer) error {
+	for {
+		recv, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				// 客户端关闭了流，可以优雅地退出循环。
+				log.Println("客户端关闭了流，服务端结束处理。")
+				return nil
+			}
+			return err
+		}
+		fmt.Println("服务端接收到客户端的消息", recv.ProdId)
+		// 处理业务逻辑...
+
+		// 发送响应
+		err = stream.Send(&ProductResponse{ProdStock: recv.ProdId})
+		if err != nil {
+			return err
+		}
 	}
 }

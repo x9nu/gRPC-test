@@ -23,6 +23,8 @@ const _ = grpc.SupportPackageIsVersion8
 const (
 	ProductService_GetProductStock_FullMethodName                = "/service.ProductService/GetProductStock"
 	ProductService_UpdateProductStockClientStream_FullMethodName = "/service.ProductService/UpdateProductStockClientStream"
+	ProductService_GetProductStockServerStream_FullMethodName    = "/service.ProductService/GetProductStockServerStream"
+	ProductService_HelloBidirectionalStream_FullMethodName       = "/service.ProductService/HelloBidirectionalStream"
 )
 
 // ProductServiceClient is the client API for ProductService service.
@@ -35,6 +37,10 @@ type ProductServiceClient interface {
 	GetProductStock(ctx context.Context, in *ProductRequest, opts ...grpc.CallOption) (*ProductResponse, error)
 	// 客户端流 RPC
 	UpdateProductStockClientStream(ctx context.Context, opts ...grpc.CallOption) (ProductService_UpdateProductStockClientStreamClient, error)
+	// 服务端流 RPC
+	GetProductStockServerStream(ctx context.Context, in *ProductRequest, opts ...grpc.CallOption) (ProductService_GetProductStockServerStreamClient, error)
+	// 双向流 RPC
+	HelloBidirectionalStream(ctx context.Context, opts ...grpc.CallOption) (ProductService_HelloBidirectionalStreamClient, error)
 }
 
 type productServiceClient struct {
@@ -90,6 +96,71 @@ func (x *productServiceUpdateProductStockClientStreamClient) CloseAndRecv() (*Pr
 	return m, nil
 }
 
+func (c *productServiceClient) GetProductStockServerStream(ctx context.Context, in *ProductRequest, opts ...grpc.CallOption) (ProductService_GetProductStockServerStreamClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ProductService_ServiceDesc.Streams[1], ProductService_GetProductStockServerStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &productServiceGetProductStockServerStreamClient{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ProductService_GetProductStockServerStreamClient interface {
+	Recv() (*ProductResponse, error)
+	grpc.ClientStream
+}
+
+type productServiceGetProductStockServerStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *productServiceGetProductStockServerStreamClient) Recv() (*ProductResponse, error) {
+	m := new(ProductResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *productServiceClient) HelloBidirectionalStream(ctx context.Context, opts ...grpc.CallOption) (ProductService_HelloBidirectionalStreamClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ProductService_ServiceDesc.Streams[2], ProductService_HelloBidirectionalStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &productServiceHelloBidirectionalStreamClient{ClientStream: stream}
+	return x, nil
+}
+
+type ProductService_HelloBidirectionalStreamClient interface {
+	Send(*ProductRequest) error
+	Recv() (*ProductResponse, error)
+	grpc.ClientStream
+}
+
+type productServiceHelloBidirectionalStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *productServiceHelloBidirectionalStreamClient) Send(m *ProductRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *productServiceHelloBidirectionalStreamClient) Recv() (*ProductResponse, error) {
+	m := new(ProductResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ProductServiceServer is the server API for ProductService service.
 // All implementations must embed UnimplementedProductServiceServer
 // for forward compatibility
@@ -100,6 +171,10 @@ type ProductServiceServer interface {
 	GetProductStock(context.Context, *ProductRequest) (*ProductResponse, error)
 	// 客户端流 RPC
 	UpdateProductStockClientStream(ProductService_UpdateProductStockClientStreamServer) error
+	// 服务端流 RPC
+	GetProductStockServerStream(*ProductRequest, ProductService_GetProductStockServerStreamServer) error
+	// 双向流 RPC
+	HelloBidirectionalStream(ProductService_HelloBidirectionalStreamServer) error
 	mustEmbedUnimplementedProductServiceServer()
 }
 
@@ -112,6 +187,12 @@ func (UnimplementedProductServiceServer) GetProductStock(context.Context, *Produ
 }
 func (UnimplementedProductServiceServer) UpdateProductStockClientStream(ProductService_UpdateProductStockClientStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method UpdateProductStockClientStream not implemented")
+}
+func (UnimplementedProductServiceServer) GetProductStockServerStream(*ProductRequest, ProductService_GetProductStockServerStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetProductStockServerStream not implemented")
+}
+func (UnimplementedProductServiceServer) HelloBidirectionalStream(ProductService_HelloBidirectionalStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method HelloBidirectionalStream not implemented")
 }
 func (UnimplementedProductServiceServer) mustEmbedUnimplementedProductServiceServer() {}
 
@@ -170,6 +251,53 @@ func (x *productServiceUpdateProductStockClientStreamServer) Recv() (*ProductReq
 	return m, nil
 }
 
+func _ProductService_GetProductStockServerStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ProductRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ProductServiceServer).GetProductStockServerStream(m, &productServiceGetProductStockServerStreamServer{ServerStream: stream})
+}
+
+type ProductService_GetProductStockServerStreamServer interface {
+	Send(*ProductResponse) error
+	grpc.ServerStream
+}
+
+type productServiceGetProductStockServerStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *productServiceGetProductStockServerStreamServer) Send(m *ProductResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _ProductService_HelloBidirectionalStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ProductServiceServer).HelloBidirectionalStream(&productServiceHelloBidirectionalStreamServer{ServerStream: stream})
+}
+
+type ProductService_HelloBidirectionalStreamServer interface {
+	Send(*ProductResponse) error
+	Recv() (*ProductRequest, error)
+	grpc.ServerStream
+}
+
+type productServiceHelloBidirectionalStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *productServiceHelloBidirectionalStreamServer) Send(m *ProductResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *productServiceHelloBidirectionalStreamServer) Recv() (*ProductRequest, error) {
+	m := new(ProductRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ProductService_ServiceDesc is the grpc.ServiceDesc for ProductService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -186,6 +314,17 @@ var ProductService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "UpdateProductStockClientStream",
 			Handler:       _ProductService_UpdateProductStockClientStream_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "GetProductStockServerStream",
+			Handler:       _ProductService_GetProductStockServerStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "HelloBidirectionalStream",
+			Handler:       _ProductService_HelloBidirectionalStream_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},
